@@ -1,0 +1,304 @@
+from auxiliar import SurfaceManager as sf
+import pygame as pg
+from constantes import ANCHO_VENTANA, ALTO_VENTANA, DEBUG
+import pygame
+import os
+
+
+def get_block(size):
+    image = pg.image.load('assets/img/Terreno/Terrain.png').convert_alpha()
+    surface = pg.Surface((size, size), pg.SRCALPHA, 32)
+    rect = pg.Rect(96, 0, size, size)
+    surface.blit(image, (0, 0), rect)
+    return pg.transform.scale2x(surface)
+
+
+class Jugador:
+    def __init__(self, x, y, frame_rate=100, speed_walk=6, speed_run=12, gravity=16, jump=32):
+    
+        super().__init__()
+        self.__iddle_r = sf.get_surface_from_spritesheet('./assets/img/player/iddle/cobardeidle.png', 1, 1)
+        self.__iddle_l = sf.get_surface_from_spritesheet('./assets/img/player/iddle/cobardeidle.png', 1, 1, flip=True)
+        self.__walk_r = sf.get_surface_from_spritesheet('./assets/img/player/walk/cobardewalk.png', 4, 1)
+        self.__walk_l = sf.get_surface_from_spritesheet('./assets/img/player/walk/cobardewalk.png', 4, 1, flip=True)
+        self.__run_r = sf.get_surface_from_spritesheet('./assets/img/player/run/cobarderun.png', 4, 1)
+        self.__run_l = sf.get_surface_from_spritesheet('./assets/img/player/run/cobarderun.png', 4, 1, flip=True)
+        #self.__jump_r = sf.get_surface_from_spritesheet('./assets/img/player/jump/cobardejump.png', 4, 1)
+        #self.__jump_l = sf.get_surface_from_spritesheet('./assets/img/player/jump/cobardejump.png', 4, 1, flip=True)
+        #self.__tirar_r = sf.get_surface_from_spritesheet('./assets/img/player/ataque/berenjena.png', 1, 1)
+        #self.__tirar_l = sf.get_surface_from_spritesheet('./assets/img/player/ataque/berenjena.png', 1, 1, flip= True)
+        self.__move_x = x  # Ajusta la posición horizontal según sea necesario
+        self.__move_y = y
+        self.__speed_walk = speed_walk
+        self.__speed_run = speed_run
+        self.__frame_rate = frame_rate
+        self.__player_move_time = 0
+        self.__player_animation_time = 0
+        self.__gravity = gravity
+        self.__jump = jump
+        self.__is_jumping = False
+        self.__initial_frame = 0
+        self.__actual_animation = self.__iddle_r
+        self.__actual_img_animation = self.__actual_animation[self.__initial_frame]
+        self.__rect = self.__actual_img_animation.get_rect()
+        self.__is_looking_right = True
+
+        self.direction = 'Right'  # Inicialmente mira a la derecha #self.__move_x = x
+        #self.__move_y = y - self.__actual_img_animation.get_height()  # Aparecerá en la parte inferior de la pantalla
+        self.__speed_walk = speed_walk
+        self.__speed_run = speed_run
+        self.__frame_rate = frame_rate
+
+        self.on_ground = False  # Nueva propiedad para rastrear si el jugador está en el suelo
+
+
+        self.__rect = self.__actual_img_animation.get_rect()  # Cambia aquí
+        self.rect = self.__actual_img_animation.get_rect()  # en lugar de self.__rect
+
+
+    
+    def verificar_colision_estructuras(self, estructuras):
+        on_ground_before = self.on_ground  # Guarda el estado anterior de "on_ground"
+        self.on_ground = False  # Restablece el estado por defecto
+
+        for estructura in estructuras:
+            if self.get_rect().colliderect(estructura.rect):
+                # Verifica si el jugador está en el suelo antes de ajustar la posición
+                if self.__rect.bottom > estructura.rect.top:
+                    self.__rect.bottom = estructura.rect.top
+                    self.on_ground = True
+                    self.__is_jumping = False
+                    self.__move_y = 0
+
+        # Si estaba en el suelo antes y no está en ninguna plataforma, permite que el jugador baje
+        if on_ground_before and not self.on_ground:
+            self.__is_jumping = True
+            self.__move_y = 0
+            self.__move_x = 0  # Ajusta la velocidad vertical a cero para evitar el atravesamiento hacia abajo
+
+        # Si estaba en el suelo antes y no está en ninguna plataforma, permite que el jugador baje
+        if on_ground_before and not self.on_ground:
+            self.__is_jumping = True
+        
+
+    def ajustar_a_plataforma(self, plataforma_rect):
+        if self.__rect.bottom > plataforma_rect.top:
+            self.__rect.bottom = plataforma_rect.top
+            self.on_ground = True
+            self.__is_jumping = False
+            self.__move_y = 0
+
+    def __set_x_animations_preset(self, move_x, animation_list: list[pg.surface.Surface], look_r: bool):
+        self.__move_x = move_x
+        self.__actual_animation = animation_list
+        self.__is_looking_right = look_r
+        
+    
+    
+    def walk(self, direction: str = 'Right'):
+        match direction:
+            case 'Right':
+                look_right = True
+                self.direction = 'Right'
+                self.__set_x_animations_preset(self.__speed_walk, self.__walk_r, look_r=look_right)
+            case 'Left':
+                look_right = False
+                self.direction = 'Left'
+                self.__set_x_animations_preset(-self.__speed_walk, self.__walk_l, look_r=look_right)
+    
+    def run(self, direction: str = 'Right'):
+        self.__initial_frame = 0
+        match direction:
+            case 'Right':
+                look_right = True
+                self.direction = 'Right'
+                self.__set_x_animations_preset(self.__speed_run, self.__run_r, look_r=look_right)
+            case 'Left':
+                look_right = False
+                self.direction = 'Left'
+                self.__set_x_animations_preset(-self.__speed_run, self.__run_l, look_r=look_right)
+    
+    def stay(self):
+        if self.__actual_animation != self.__iddle_l and self.__actual_animation != self.__iddle_r:
+            self.__actual_animation = self.__iddle_r if self.__is_looking_right else self.__iddle_l
+            self.__initial_frame = 0
+            self.__move_x = 0
+            self.__move_y = 0
+    
+    def jump(self):
+        # Permitir el salto incluso si está en una plataforma
+        self.__is_jumping = True
+        self.__move_y = -self.__jump * 2
+
+    
+    def __set_borders_limits(self):
+        pixels_move = 0
+        if self.__move_x > 0:
+            pixels_move = self.__move_x if self.__rect.x < ANCHO_VENTANA - self.__actual_img_animation.get_width() else 0
+        elif self.__move_x < 0:
+            pixels_move = self.__move_x if self.__rect.x > 0 else 0
+        return pixels_move
+
+
+    def do_movement(self, delta_ms):
+        self.__player_move_time += delta_ms
+        if self.__player_move_time >= self.__frame_rate:
+            self.__player_move_time = 0
+            self.__rect.x += self.__set_borders_limits()
+
+            if self.__is_jumping:
+                # Mueve el jugador en el eje y
+                self.__rect.y += self.__move_y
+                self.__move_y += self.__gravity  # Agrega gravedad al movimiento vertical
+
+                # Verificar si el jugador ha aterrizado en la parte inferior de la pantalla
+                if self.__rect.y >= ALTO_VENTANA - self.__actual_img_animation.get_height():
+                    self.__rect.y = ALTO_VENTANA - self.__actual_img_animation.get_height() - 20
+                    self.__is_jumping = False
+                    self.__move_y = 0
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def do_animation(self, delta_ms):
+        self.__player_animation_time += delta_ms
+        if self.__player_animation_time >= self.__frame_rate:
+            self.__player_animation_time = 0
+            if self.__initial_frame < len(self.__actual_animation) - 1:
+                self.__initial_frame += 1
+            else:
+                self.__initial_frame = 0
+                if not self.__is_jumping:
+                    if self.__actual_animation != self.__iddle_l and self.__actual_animation != self.__iddle_r:
+                        self.__actual_animation = self.__iddle_r if self.__is_looking_right else self.__iddle_l
+                        self.__initial_frame = 0
+                        self.__move_x = 0
+                        self.__move_y = 0
+
+
+    def update(self, delta_ms, estructuras):
+        # Mueve y anima al jugador
+        self.do_movement(delta_ms)
+        self.do_animation(delta_ms)
+        self.verificar_colision_estructuras(estructuras)
+
+    
+    def draw(self, screen: pg.surface.Surface):
+        if DEBUG:
+            pg.draw.rect(screen, 'red', self.__rect)
+        self.__actual_img_animation = self.__actual_animation[self.__initial_frame]
+        screen.blit(self.__actual_img_animation, self.__rect)
+
+
+    def get_rect(self):
+        return self.__rect
+    
+    def get_direction(self):
+        return self.direction
+
+
+#-----------------------------------------actualidad------------------------------#
+
+class Disparos(pg.sprite.Sprite):
+    def __init__(self, x, y, direction):
+        super().__init__()
+
+        # Carga la imagen con un fondo transparente
+        image = pg.image.load('./assets/img/player/ataque/berenjena.png').convert_alpha()
+        self.image = pg.transform.scale(image, (20, 20))
+
+        self.rect = self.image.get_rect()
+        self.rect.bottom = y + 30  # Ajusta este valor según sea necesario para que la bala salga más abajo
+        self.rect.centerx = x
+        self.speed = 4  # Velocidad de la bala
+
+        self.rect = self.image.get_rect()
+        self.rect.bottom = y + 30
+        self.rect.centerx = x
+        self.speed = 4 if direction == 'Right' else -4  # Ajusta la velocidad según la dirección
+
+        self.rect = self.image.get_rect()
+        self.rect.bottom = y + 30  # Ajusta este valor según sea necesario para que la bala salga más abajo
+        self.rect.centerx = x
+        self.speed = 4  # Velocidad de la bala
+
+        self.direction = direction
+        
+
+    def disparo(self):
+        # Ajusta la posición inicial de la bala para que salga más abajo
+        bala = Disparos(self.rect.centerx, self.rect.centery + 0)  # Ajusta este valor según sea necesario
+        balas.add(bala)
+
+    def update(self):
+        # Mueve la bala hacia la derecha (en el eje x) o izquierda según la dirección
+        if self.direction == 'Right':
+            self.rect.x += self.speed
+        elif self.direction == 'Left':
+            self.rect.x -= self.speed
+
+        if self.rect.right > ANCHO_VENTANA or self.rect.left < 0:
+            self.kill()
+
+        
+
+balas = pg.sprite.Group()
+
+
+class Enemigo(pg.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__()
+
+        # Carga la imagen del villano con fondo transparente desde el archivo PNG
+        image_path = "./assets/img/enemigo/Quieto/villanoquieto.png"
+
+        self.image = pg.image.load(image_path).convert_alpha()
+
+        self.rect = self.image.get_rect()
+        self.rect.center = (x, y)
+
+    def update(self):
+        # Puedes agregar lógica de actualización aquí si es necesario
+        pass
+
+class Objeto(pygame.sprite.Sprite ):
+    def __init__(self, x, y, width, height, name = None):
+        super().__init__()
+        self.rect = pygame.Rect(x, y, width, height)
+        self.image = pygame.Surface((width, height), pygame.SRCALPHA)
+        self.width = width
+        self.height = height
+        self.name = name
+
+    def draw(self, win):
+        win.blit(self.image,(self.rect.x, self.rect.y))
+
+class Block:
+    def __init__(self, x, y, size):
+        self.rect = pg.Rect(x, y, size, size)
+        self.color = (255, 0, 0)
+    
+    def update(self, delta_ms):
+        # Puedes agregar lógica de actualización aquí si es necesario
+        pass
+    
+    def draw(self, screen: pg.surface.Surface):
+        if DEBUG:
+            pg.draw.rect(screen, self.color, self.rect)
+
+
+#class Plataforma():
