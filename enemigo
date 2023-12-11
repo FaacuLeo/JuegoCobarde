@@ -1,0 +1,18 @@
+import pygame as pg
+from constantes import DEBUG
+
+class Enemigo(pg.sprite.Sprite):
+    # Sprite del enemigo
+    def __init__(self, coordenadas):
+        # Heredamos el init de la clase Sprite de Pygame
+        super().__init__()
+        # Rectángulo (enemigos)
+        self.image = pg.image.load("assets/img/enemigo/ENEMIGODERECHA.png").convert()
+        # Obtiene el rectángulo (sprite)
+        self.rect = self.image.get_rect()
+        self.rect.midbottom = coordenadas
+
+    def draw(self, screen: pg.surface.Surface):
+        if DEBUG:
+            pg.draw.rect(screen, 'green', self.rect)
+        screen.blit(self.image, self.rect)
