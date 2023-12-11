@@ -1,0 +1,23 @@
+import pygame as pg
+from constantes import DEBUG
+
+class Estructura(pg.sprite.Sprite):
+    def __init__(self, x, y, width, height, image_path):
+        super().__init__()
+
+        self.image = pg.transform.scale(pg.image.load(image_path),(width,height))
+        self.rect = pg.Rect(x, y, width, height)
+
+    #def cargar_imagen(self):
+        # Cargar la imagen y convertirla al formato adecuado
+        #self.image = pg.image.load(self.image).convert_alpha()
+
+    def get_rect(self):
+        return self.rect
+    
+
+    def draw(self, screen):
+        screen.blit(self.image, self.rect)
+        if DEBUG:
+            pg.draw.rect(screen, 'red', self.rect)
+            screen.blit(self.image, self.rect)
