@@ -2,10 +2,12 @@ import pygame as pg
 from main_player import Disparos, Jugador
 from constantes import ALTO_VENTANA, ANCHO_VENTANA, FPS
 from Plataforma import Estructura
-#from vida import Vida
-
 from enemigo import Enemigo
-
+from puntajes import Puntaje
+from vida import Vida
+from Temporizador import Temporizador
+from Item import Item
+from random import randint
 
 # Inicializar Pygame
 pg.init()
@@ -13,64 +15,66 @@ screen = pg.display.set_mode((ANCHO_VENTANA, ALTO_VENTANA))
 pg.display.set_caption("Mi Juego")
 clock = pg.time.Clock()
 
+
+
 # Cargar imágenes y fondos
 back_img = pg.image.load('./assets/img/background/casade.png')
 back_img = pg.transform.scale(back_img, (ANCHO_VENTANA, ALTO_VENTANA))
 
-estructura1 = Estructura(100, 200, 50, 50, r'./assets/img/Terreno/pisopiso.png')
-#estructura1.cargar_imagen()
-
-#estructura1.image = pg.image.load(estructura1.image_path).convert_alpha()
-
 # Crear jugador
-vegeta = Jugador(0, ALTO_VENTANA, frame_rate=70, speed_walk=10, speed_run=40)
-
-
-cabeza = Enemigo((100, 590))
+vegeta = Jugador(0, 400, frame_rate=70, speed_walk=10, speed_run=40)
+# Crear instancia de la clase Vida
+vida_jugador = Vida(10, 50, vegeta)
 
 # Grupos
 balas = pg.sprite.Group()
 cabezas = pg.sprite.Group()
-
-cabezas.add(cabeza)
+items = pg.sprite.Group()
+grupo_estructuras = pg.sprite.Group()
+bala_nueva = None
 
 # Bucle principal del juego
 juego_ejecutandose = True
 delta_ms = clock.tick(FPS)  # Calcular la diferencia de tiempo
 
-grupo_estructuras = pg.sprite.Group()
-
-estructura1 = Estructura(100, 200, 100, 10, r'./assets\img\Terreno\pisopisopiso.png')
-estructura2 = Estructura(150, 200, 100, 10, r'./assets\img\Terreno\pisopisopiso.png')
-estructura3 = Estructura(400, 200, 100, 10, r'./assets\img\Terreno\pisopisopiso.png')
-estructura4 = Estructura(450, 200, 100, 10, r'./assets\img\Terreno\pisopisopiso.png')
+estructura1 = Estructura(100, 450, 200, 10, r'./assets\img\Terreno\pisopisopisopiso.png')
+estructura2 = Estructura(350, 300, 200, 10, r'./assets\img\Terreno\pisopisopisopiso.png')
+estructura3 = Estructura(575, 150, 200, 10, r'./assets\img\Terreno\pisopisopisopiso.png')
 plataforma = Estructura(0, 580, 820, 50, r'./assets\img\Terreno\pisopisopiso.png' )
-#lista_estructuras = [estructura1, estructura2, estructura3, estructura4]
-
-grupo_estructuras.add(estructura1, estructura2, estructura3, estructura4, plataforma)
-
-# Grupo de vidas
-#grupo_vidas = pg.sprite.Group()
+grupo_estructuras.add(estructura1, estructura2, estructura3, plataforma)
 
 
-# Crear instancia de la clase Vida
-#vida_jugador = Vida(10, 10)  
+# Crear enemigos en posiciones aleatorias dentro de las estructuras
+enemigo1 = Enemigo(grupo_estructuras)
+enemigo2 = Enemigo(grupo_estructuras)
+enemigo3 = Enemigo(grupo_estructuras)
+
+# Añadir enemigos al grupo
+cabezas.add(enemigo1, enemigo2, enemigo3)
+# Crear instancias de la clase Item y agregarlas al grupo
+item1 = Item(200, 400)
+item2 = Item(500, 200)
+
+items.add(item1, item2)
+
+# Crear una instancia de la clase Puntaje
+puntaje = Puntaje(x=10, y=10)
+
+# Crear una instancia de la clase Temporizador
+temporizador = Temporizador()
+
+# Crear una fuente para el temporizador
+font = pg.font.Font(None, 36)
 
 
-
-
-estructura1.rect.y += 250
-estructura2.rect.y += 250
-estructura3.rect.y += 250
-estructura4.rect.y += 250
-estructura1.rect.x += 100
-estructura2.rect.x += 100
-estructura3.rect.x += 100
-estructura4.rect.x += 100
+# Generar coordenadas aleatorias y configurar las posiciones iniciales
+for enemigo in (enemigo1, enemigo2, enemigo3):
+    enemigo.coordenadas_iniciales = enemigo.generar_coordenadas_aleatorias()
+    enemigo.rect.topleft = enemigo.coordenadas_iniciales
 
 
 juego_ejecutandose = True
-while juego_ejecutandose:
+while juego_ejecutandose and vegeta.vidas > 0:
     for event in pg.event.get():
         if event.type == pg.QUIT:
             juego_ejecutandose = False
@@ -80,19 +84,34 @@ while juego_ejecutandose:
             elif event.key == pg.K_b:
                 bala_nueva = Disparos(vegeta.get_rect().centerx, vegeta.get_rect().top, vegeta.get_direction())
                 balas.add(bala_nueva)
+                
+
+    if bala_nueva is not None:
+        colision_bala_con_enemigo = pg.sprite.spritecollide(bala_nueva, cabezas, True)
+        for bala in colision_bala_con_enemigo:
+            print("cubonekill")
+            bala_nueva.kill()
+            puntaje.incrementar_puntaje(1)  # Incrementa el puntaje cuando una bala colisiona con un enemigo
+
+    for enemigo in cabezas:
+        if vegeta.get_rect().colliderect(enemigo.rect):
+            vida_jugador.perder_vida()
+            # Reiniciar la posición del jugador y los enemigos
+            vegeta.reset_position()
+            enemigo.reset_position()
+
+    for item in items:
+        if vegeta.get_rect().colliderect(item.rect):
+            print("Rico")
+            puntaje.incrementar_puntaje(3)  # Suma 3 puntos al recoger un ítem
+            item.kill()  # Elimina el ítem después de la colisión
+
     
-
-
-    #colision_bala_con_enemigo = pg.sprite.spritecollide(bala, cabezas, True)
-    #for bala in colision_bala_con_enemigo:
-    #     print("elimine enemigo")
-
-    #     bala.kill()                 
     
-
-
-
-    # Actualizar jugador y enemigos
+    
+    tiempo_transcurrido = temporizador.obtener_tiempo_transcurrido()
+    segundos_transcurridos = temporizador.obtener_segundos_transcurridos()
+    # Resto del código sin cambios
     lista_teclas_presionadas = pg.key.get_pressed()
     if lista_teclas_presionadas[pg.K_RIGHT] and not lista_teclas_presionadas[pg.K_LEFT]:
         vegeta.walk('Right')
@@ -106,39 +125,49 @@ while juego_ejecutandose:
     elif lista_teclas_presionadas[pg.K_LEFT] and lista_teclas_presionadas[pg.K_LSHIFT] and not lista_teclas_presionadas[pg.K_RIGHT]:
         vegeta.run('Left')
 
-
-
     delta_ms = clock.tick(FPS)
     vegeta.update(delta_ms, grupo_estructuras)
 
-
-  
-
-    # Actualizar balas
     balas.update()
 
-    # Dibujar fondo
     screen.blit(back_img, back_img.get_rect())
 
-    # Dibujar estructuras
+    # Dibujar el grupo de estructuras después del fondo
     grupo_estructuras.draw(screen)
 
-    # Dibujar jugador y enemigos
+    # Actualizar y dibujar la plataforma después del grupo de estructuras
+    grupo_estructuras.update()
     vegeta.draw(screen)
-
-    # Dibujar balas
     balas.draw(screen)
-
-    cabeza.draw(screen)
-
-    # Dibujar el grupo de vidas
-    #grupo_vidas.draw(screen)
-
-    cabezas.update()
+    cabezas.draw(screen)
+    puntaje.draw(screen)
+    grupo_estructuras.update()
+    vegeta.draw(screen)
+    vida_jugador.draw(screen)
 
 
-    # Actualizar pantalla
+    grupo_estructuras.draw(screen)
+    grupo_estructuras.update()
+    vegeta.draw(screen)
+    balas.draw(screen)
+    cabezas.draw(screen)  # Asegúrate de dibujar los enemigos después de las estructuras
+
+    puntaje.draw(screen)
+    vida_jugador.draw(screen)
+
+
+    # Dibujar la vida debajo del puntaje
+    tiempo_texto = font.render(f'Tiempo: {segundos_transcurridos} s', True, (255, 255, 255))
+    tiempo_rect = tiempo_texto.get_rect()
+    tiempo_rect.topright = (ANCHO_VENTANA - 10, 10)
+    screen.blit(tiempo_texto, tiempo_rect)
+
+    items.update()
+    items.draw(screen)
+
+
+
+
     pg.display.update()
 
-# Cerrar Pygame
 pg.quit()
