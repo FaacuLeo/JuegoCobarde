@@ -23,11 +23,8 @@ class Jugador:
         self.__walk_l = sf.get_surface_from_spritesheet('./assets/img/player/walk/cobardewalk.png', 4, 1, flip=True)
         self.__run_r = sf.get_surface_from_spritesheet('./assets/img/player/run/cobarderun.png', 4, 1)
         self.__run_l = sf.get_surface_from_spritesheet('./assets/img/player/run/cobarderun.png', 4, 1, flip=True)
-        #self.__jump_r = sf.get_surface_from_spritesheet('./assets/img/player/jump/cobardejump.png', 4, 1)
-        #self.__jump_l = sf.get_surface_from_spritesheet('./assets/img/player/jump/cobardejump.png', 4, 1, flip=True)
-        #self.__tirar_r = sf.get_surface_from_spritesheet('./assets/img/player/ataque/berenjena.png', 1, 1)
-        #self.__tirar_l = sf.get_surface_from_spritesheet('./assets/img/player/ataque/berenjena.png', 1, 1, flip= True)
-        self.__move_x = x  # Ajusta la posición horizontal según sea necesario
+        
+        self.__move_x = x  
         self.__move_y = y
         self.__speed_walk = speed_walk
         self.__speed_run = speed_run
@@ -42,20 +39,16 @@ class Jugador:
         self.__actual_img_animation = self.__actual_animation[self.__initial_frame]
         self.__rect = self.__actual_img_animation.get_rect()
         self.__is_looking_right = True
-
         self.direction = 'Right'  # Inicialmente mira a la derecha #self.__move_x = x
         #self.__move_y = y - self.__actual_img_animation.get_height()  # Aparecerá en la parte inferior de la pantalla
         self.__speed_walk = speed_walk
         self.__speed_run = speed_run
         self.__frame_rate = frame_rate
-
         self.on_ground = False  # Nueva propiedad para rastrear si el jugador está en el suelo
-
-
         self.__rect = self.__actual_img_animation.get_rect()  # Cambia aquí
         self.rect = self.__actual_img_animation.get_rect()  # en lugar de self.__rect
 
-
+        self.vidas = 3  # o cualquier valor inicial que desees
     
     def verificar_colision_estructuras(self, estructuras):
         on_ground_before = self.on_ground  # Guarda el estado anterior de "on_ground"
@@ -167,13 +160,6 @@ class Jugador:
 
 
 
-
-
-
-
-
-
-
     def do_animation(self, delta_ms):
         self.__player_animation_time += delta_ms
         if self.__player_animation_time >= self.__frame_rate:
@@ -203,6 +189,15 @@ class Jugador:
         self.__actual_img_animation = self.__actual_animation[self.__initial_frame]
         screen.blit(self.__actual_img_animation, self.__rect)
 
+    def perder_vida(self):
+        self.vidas -= 1
+    
+    def reset_position(self):
+        self.__move_x = 0
+        self.__move_y = 0
+        self.__rect.x = 0  # Ajusta según la posición inicial deseada en x
+        self.__rect.y = 400  # Ajusta según la posición inicial deseada en y
+    
 
     def get_rect(self):
         return self.__rect
@@ -240,9 +235,14 @@ class Disparos(pg.sprite.Sprite):
         
 
     def disparo(self):
+
+        balas = pg.sprite.Group()
+
         # Ajusta la posición inicial de la bala para que salga más abajo
         bala = Disparos(self.rect.centerx, self.rect.centery + 0)  # Ajusta este valor según sea necesario
         balas.add(bala)
+
+
 
     def update(self):
         # Mueve la bala hacia la derecha (en el eje x) o izquierda según la dirección
@@ -254,26 +254,7 @@ class Disparos(pg.sprite.Sprite):
         if self.rect.right > ANCHO_VENTANA or self.rect.left < 0:
             self.kill()
 
-        
 
-balas = pg.sprite.Group()
-
-
-class Enemigo(pg.sprite.Sprite):
-    def __init__(self, x, y):
-        super().__init__()
-
-        # Carga la imagen del villano con fondo transparente desde el archivo PNG
-        image_path = "./assets/img/enemigo/Quieto/villanoquieto.png"
-
-        self.image = pg.image.load(image_path).convert_alpha()
-
-        self.rect = self.image.get_rect()
-        self.rect.center = (x, y)
-
-    def update(self):
-        # Puedes agregar lógica de actualización aquí si es necesario
-        pass
 
 class Objeto(pygame.sprite.Sprite ):
     def __init__(self, x, y, width, height, name = None):
