@@ -1,18 +1,42 @@
 import pygame as pg
 from constantes import DEBUG
+from constantes import *
+import random
 
 class Enemigo(pg.sprite.Sprite):
-    # Sprite del enemigo
-    def __init__(self, coordenadas):
-        # Heredamos el init de la clase Sprite de Pygame
+    def __init__(self, estructuras):
         super().__init__()
-        # Rectángulo (enemigos)
-        self.image = pg.image.load("assets/img/enemigo/ENEMIGODERECHA.png").convert()
-        # Obtiene el rectángulo (sprite)
+        self.image = pg.image.load("./assets/img/enemigo/cuboneizquierda/izquierda.png").convert()
         self.rect = self.image.get_rect()
-        self.rect.midbottom = coordenadas
+        self.velocidad = 5
+        self.estructuras = estructuras
+        self.activo = True  # Bandera para indicar si el enemigo está activo
+        self.coordenadas_iniciales = self.generar_coordenadas_aleatorias()
 
+    def generar_coordenadas_aleatorias(self):
+        estructura = random.choice(list(self.estructuras))
+        x = random.randint(estructura.rect.left, estructura.rect.right - self.rect.width)
+        y = estructura.rect.top - self.rect.height
+        return x, y
+  # Ajustar directamente la posición del rectángulo del enemigo
+    
+    def reset_position(self):
+        self.rect.topleft = self.coordenadas_iniciales
+    
     def draw(self, screen: pg.surface.Surface):
         if DEBUG:
             pg.draw.rect(screen, 'green', self.rect)
         screen.blit(self.image, self.rect)
+
+    def update(self):
+        # Si el enemigo está activo, realiza las actualizaciones normales
+        if self.activo:
+            self.rect.x += self.velocidad
+
+            for estructura in self.estructuras:
+                if pg.sprite.collide_rect(self, estructura):
+                    self.rect.bottom = estructura.rect.top
+
+            if self.rect.right > max(estructura.rect.right for estructura in self.estructuras) or \
+               self.rect.left < min(estructura.rect.left for estructura in self.estructuras):
+                self.velocidad = -self.velocidad
