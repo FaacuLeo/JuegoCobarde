@@ -7,167 +7,214 @@ from puntajes import Puntaje
 from vida import Vida
 from Temporizador import Temporizador
 from Item import Item
-from random import randint
-
-# Inicializar Pygame
-pg.init()
-screen = pg.display.set_mode((ANCHO_VENTANA, ALTO_VENTANA))
-pg.display.set_caption("Mi Juego")
-clock = pg.time.Clock()
+import random
+from Trampa import Trampas
 
 
 
-# Cargar imágenes y fondos
-back_img = pg.image.load('./assets/img/background/casade.png')
-back_img = pg.transform.scale(back_img, (ANCHO_VENTANA, ALTO_VENTANA))
-
-# Crear jugador
-vegeta = Jugador(0, 400, frame_rate=70, speed_walk=10, speed_run=40)
-# Crear instancia de la clase Vida
-vida_jugador = Vida(10, 50, vegeta)
-
-# Grupos
-balas = pg.sprite.Group()
-cabezas = pg.sprite.Group()
-items = pg.sprite.Group()
-grupo_estructuras = pg.sprite.Group()
-bala_nueva = None
-
-# Bucle principal del juego
-juego_ejecutandose = True
-delta_ms = clock.tick(FPS)  # Calcular la diferencia de tiempo
-
-estructura1 = Estructura(100, 450, 200, 10, r'./assets\img\Terreno\pisopisopisopiso.png')
-estructura2 = Estructura(350, 300, 200, 10, r'./assets\img\Terreno\pisopisopisopiso.png')
-estructura3 = Estructura(575, 150, 200, 10, r'./assets\img\Terreno\pisopisopisopiso.png')
-plataforma = Estructura(0, 580, 820, 50, r'./assets\img\Terreno\pisopisopiso.png' )
-grupo_estructuras.add(estructura1, estructura2, estructura3, plataforma)
 
 
-# Crear enemigos en posiciones aleatorias dentro de las estructuras
-enemigo1 = Enemigo(grupo_estructuras)
-enemigo2 = Enemigo(grupo_estructuras)
-enemigo3 = Enemigo(grupo_estructuras)
-
-# Añadir enemigos al grupo
-cabezas.add(enemigo1, enemigo2, enemigo3)
-# Crear instancias de la clase Item y agregarlas al grupo
-item1 = Item(200, 400)
-item2 = Item(500, 200)
-
-items.add(item1, item2)
-
-# Crear una instancia de la clase Puntaje
-puntaje = Puntaje(x=10, y=10)
-
-# Crear una instancia de la clase Temporizador
-temporizador = Temporizador()
-
-# Crear una fuente para el temporizador
-font = pg.font.Font(None, 36)
 
 
-# Generar coordenadas aleatorias y configurar las posiciones iniciales
-for enemigo in (enemigo1, enemigo2, enemigo3):
-    enemigo.coordenadas_iniciales = enemigo.generar_coordenadas_aleatorias()
-    enemigo.rect.topleft = enemigo.coordenadas_iniciales
+def arranco_juego(jugador, nivel):
+    pg.init()
 
 
-juego_ejecutandose = True
-while juego_ejecutandose and vegeta.vidas > 0:
-    for event in pg.event.get():
-        if event.type == pg.QUIT:
-            juego_ejecutandose = False
-        elif event.type == pg.KEYDOWN:
-            if event.key == pg.K_SPACE:
-                vegeta.jump()
-            elif event.key == pg.K_b:
-                bala_nueva = Disparos(vegeta.get_rect().centerx, vegeta.get_rect().top, vegeta.get_direction())
-                balas.add(bala_nueva)
-                
+    screen = pg.display.set_mode((ANCHO_VENTANA, ALTO_VENTANA))
+    pg.display.set_caption("Mi Juego")
+    clock = pg.time.Clock()
 
-    if bala_nueva is not None:
-        colision_bala_con_enemigo = pg.sprite.spritecollide(bala_nueva, cabezas, True)
-        for bala in colision_bala_con_enemigo:
-            print("cubonekill")
-            bala_nueva.kill()
-            puntaje.incrementar_puntaje(1)  # Incrementa el puntaje cuando una bala colisiona con un enemigo
 
-    for enemigo in cabezas:
-        if vegeta.get_rect().colliderect(enemigo.rect):
-            vida_jugador.perder_vida()
-            # Reiniciar la posición del jugador y los enemigos
-            vegeta.reset_position()
-            enemigo.reset_position()
 
-    for item in items:
-        if vegeta.get_rect().colliderect(item.rect):
-            print("Rico")
-            puntaje.incrementar_puntaje(3)  # Suma 3 puntos al recoger un ítem
-            item.kill()  # Elimina el ítem después de la colisión
+    # Cargar imágenes y fondos
+    back_img = pg.image.load('./assets/img/background/casade.png')
+    back_img = pg.transform.scale(back_img, (ANCHO_VENTANA, ALTO_VENTANA))
 
+    # Crear jugador
+    cobarde = Jugador(0, 400, frame_rate=70, speed_walk=10, speed_run=40)
+   
+    
+
+    # GRUPOS
+    balas = pg.sprite.Group()
+    cabezas = pg.sprite.Group()
+    items = pg.sprite.Group()
+    grupo_estructuras = pg.sprite.Group()
+    trampas = pg.sprite.Group()
+    bala_nueva = None
+
+    # CARGA SONIDOS
+    juego_ejecutandose = True
+    delta_ms = clock.tick(FPS)  # Calcular la diferencia de tiempo
+    sonido_disparo = pg.mixer.Sound("assets\sonido\Disparo.mp3")  # Cambia la ruta al archivo de tu elección
+    impacto = pg.mixer.Sound("assets\sonido\Impacto.mp3")
+    Explosion = pg.mixer.Sound("assets\sonido\Explosion.mp3")
+
+    #CARGA ESTRUCTURAS
+    estructura1 = Estructura(100, 450, 200, 10, r'./assets\img\Terreno\pisopisopisopiso.png')
+    estructura2 = Estructura(350, 300, 200, 10, r'./assets\img\Terreno\pisopisopisopiso.png')
+    estructura3 = Estructura(575, 150, 200, 10, r'./assets\img\Terreno\pisopisopisopiso.png')
+    plataforma = Estructura(0, 580, 820, 50, r'./assets\img\Terreno\pisopisopiso.png' )
+    grupo_estructuras.add(estructura1, estructura2, estructura3, plataforma)
+
+
+    # Crear enemigos en posiciones aleatorias dentro de las estructuras
+    enemigo1 = Enemigo(grupo_estructuras)
+    enemigo2 = Enemigo(grupo_estructuras)
+    enemigo3 = Enemigo(grupo_estructuras)
+
+   
+    
+    #INSTANCIAS
+    
+    trampa1 = Trampas(180, 445)
+    trampa2 = Trampas(500, 300)
+    trampa3 = Trampas(590, 150)
+    #trampas.add(trampa1, trampa2, trampa3)
+    vida_jugador = Vida(10, 50, cobarde)
+    puntaje = Puntaje(x=10, y=10)
+    temporizador = Temporizador()
+    item1 = Item(200, 400)
+    item2 = Item(500, 200)
     
     
+    #AÑADIR
+
+    items.add(item1, item2)
+    cabezas.add(enemigo1, enemigo2, enemigo3)
+    trampas.add(trampa1, trampa2, trampa3)
+
+    # Crear una fuente para el temporizador
+    font = pg.font.Font(None, 36)
+
+
     
-    tiempo_transcurrido = temporizador.obtener_tiempo_transcurrido()
-    segundos_transcurridos = temporizador.obtener_segundos_transcurridos()
-    # Resto del código sin cambios
-    lista_teclas_presionadas = pg.key.get_pressed()
-    if lista_teclas_presionadas[pg.K_RIGHT] and not lista_teclas_presionadas[pg.K_LEFT]:
-        vegeta.walk('Right')
-    elif lista_teclas_presionadas[pg.K_LEFT] and not lista_teclas_presionadas[pg.K_RIGHT]:
-        vegeta.walk('Left')
-    elif not lista_teclas_presionadas[pg.K_RIGHT] and not lista_teclas_presionadas[pg.K_LEFT]:
-        vegeta.stay()
-
-    if lista_teclas_presionadas[pg.K_RIGHT] and lista_teclas_presionadas[pg.K_LSHIFT] and not lista_teclas_presionadas[pg.K_LEFT]:
-        vegeta.run('Right')
-    elif lista_teclas_presionadas[pg.K_LEFT] and lista_teclas_presionadas[pg.K_LSHIFT] and not lista_teclas_presionadas[pg.K_RIGHT]:
-        vegeta.run('Left')
-
-    delta_ms = clock.tick(FPS)
-    vegeta.update(delta_ms, grupo_estructuras)
-
-    balas.update()
-
-    screen.blit(back_img, back_img.get_rect())
-
-    # Dibujar el grupo de estructuras después del fondo
-    grupo_estructuras.draw(screen)
-
-    # Actualizar y dibujar la plataforma después del grupo de estructuras
-    grupo_estructuras.update()
-    vegeta.draw(screen)
-    balas.draw(screen)
-    cabezas.draw(screen)
-    puntaje.draw(screen)
-    grupo_estructuras.update()
-    vegeta.draw(screen)
-    vida_jugador.draw(screen)
-
-
-    grupo_estructuras.draw(screen)
-    grupo_estructuras.update()
-    vegeta.draw(screen)
-    balas.draw(screen)
-    cabezas.draw(screen)  # Asegúrate de dibujar los enemigos después de las estructuras
-
-    puntaje.draw(screen)
-    vida_jugador.draw(screen)
-
-
-    # Dibujar la vida debajo del puntaje
-    tiempo_texto = font.render(f'Tiempo: {segundos_transcurridos} s', True, (255, 255, 255))
-    tiempo_rect = tiempo_texto.get_rect()
-    tiempo_rect.topright = (ANCHO_VENTANA - 10, 10)
-    screen.blit(tiempo_texto, tiempo_rect)
-
-    items.update()
-    items.draw(screen)
 
 
 
+    # Generar coordenadas aleatorias y configurar las posiciones iniciales
+    for enemigo in (enemigo1, enemigo2, enemigo3):
+        enemigo.coordenadas_iniciales = enemigo.generar_coordenadas_aleatorias()
+        enemigo.rect.topleft = enemigo.coordenadas_iniciales
 
-    pg.display.update()
 
-pg.quit()
+    juego_ejecutandose = True
+    while juego_ejecutandose and cobarde.vidas > 0:
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                juego_ejecutandose = False
+            elif event.type == pg.KEYDOWN:
+                if event.key == pg.K_SPACE:
+                    cobarde.jump()
+                elif event.key == pg.K_b:
+                    sonido_disparo.play()
+                    bala_nueva = Disparos(cobarde.get_rect().centerx, cobarde.get_rect().top, cobarde.get_direction())
+                    balas.add(bala_nueva)
+                    
+
+        if bala_nueva is not None:
+            colision_bala_con_enemigo = pg.sprite.spritecollide(bala_nueva, cabezas, True)
+            for bala in colision_bala_con_enemigo:
+                print("cubonekill")
+                cobarde.colisionar_enemigo_cabeza += 1
+        
+                Explosion.play()
+                bala_nueva.kill()
+                puntaje.incrementar_puntaje(1)  # Incrementa el puntaje cuando una bala colisiona con un enemigo
+
+        for enemigo in cabezas:
+            if cobarde.get_rect().colliderect(enemigo.rect):
+                vida_jugador.perder_vida()
+            
+                # Reiniciar la posición del jugador y los enemigos
+                cobarde.reset_position()
+                enemigo.reset_position()
+
+        for trampa in trampas:
+            if cobarde.get_rect().colliderect(trampa.rect):
+                vida_jugador.perder_vida()
+        # Reiniciar la posición del jugador y la trampa
+                cobarde.reset_position()
+                trampa.reset_pos
+
+    
+
+        for item in items:
+            if cobarde.get_rect().colliderect(item.rect):
+                impacto.play()
+                print("Rico")
+                puntaje.incrementar_puntaje(3)  # Suma 3 puntos al recoger un ítem
+                item.kill()  # Elimina el ítem después de la colisión
+
+
+    
+        
+        
+        #tiempo_transcurrido = temporizador.obtener_tiempo_transcurrido()
+        segundos_transcurridos = temporizador.obtener_segundos_transcurridos()
+        # Resto del código sin cambios
+        lista_teclas_presionadas = pg.key.get_pressed()
+        if lista_teclas_presionadas[pg.K_RIGHT] and not lista_teclas_presionadas[pg.K_LEFT]:
+            cobarde.walk('Right')
+        elif lista_teclas_presionadas[pg.K_LEFT] and not lista_teclas_presionadas[pg.K_RIGHT]:
+            cobarde.walk('Left')
+        elif not lista_teclas_presionadas[pg.K_RIGHT] and not lista_teclas_presionadas[pg.K_LEFT]:
+            cobarde.stay()
+
+        if lista_teclas_presionadas[pg.K_RIGHT] and lista_teclas_presionadas[pg.K_LSHIFT] and not lista_teclas_presionadas[pg.K_LEFT]:
+            cobarde.run('Right')
+        elif lista_teclas_presionadas[pg.K_LEFT] and lista_teclas_presionadas[pg.K_LSHIFT] and not lista_teclas_presionadas[pg.K_RIGHT]:
+            cobarde.run('Left')
+
+        delta_ms = clock.tick(FPS)
+        cobarde.update(delta_ms, grupo_estructuras)
+
+        balas.update()
+
+        screen.blit(back_img, back_img.get_rect())
+
+        # Dibujar el grupo de estructuras después del fondo
+        grupo_estructuras.draw(screen)
+
+        # Actualizar y dibujar la plataforma después del grupo de estructuras
+        grupo_estructuras.update()
+        cobarde.draw(screen)
+        balas.draw(screen)
+        cabezas.draw(screen)
+        puntaje.draw(screen)
+        grupo_estructuras.update()
+        cobarde.draw(screen)
+        vida_jugador.draw(screen)
+        
+   
+        
+        grupo_estructuras.draw(screen)
+        grupo_estructuras.update()
+        cobarde.draw(screen)
+        balas.draw(screen)
+        cabezas.draw(screen)  # Asegúrate de dibujar los enemigos después de las estructuras
+
+        puntaje.draw(screen)
+        vida_jugador.draw(screen)
+
+
+        # Dibujar la vida debajo del puntaje
+        tiempo_texto = font.render(f'Tiempo: {segundos_transcurridos} s', True, (255, 255, 255))
+        tiempo_rect = tiempo_texto.get_rect()
+        tiempo_rect.topright = (ANCHO_VENTANA - 10, 10)
+        screen.blit(tiempo_texto, tiempo_rect)
+
+        enemigo1.update()
+        enemigo2.update()
+        enemigo3.update()
+
+        items.update()
+        items.draw(screen)
+
+        trampas.update()
+        trampas.draw(screen)
+
+
+        pg.display.update()
+
+    pg.quit()
