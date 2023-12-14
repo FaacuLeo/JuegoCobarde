@@ -1,6 +1,16 @@
+
+import json
+
 ANCHO_VENTANA = 800
 ALTO_VENTANA = 600
 FPS = 60
 DEBUG = False
 
+RUTA = "./Desktop/JUUEEGOO/configuracion.json"
+
 #GROUND_COLLIDE_H = 50  # o el valor que desees
+
+def abrir_config():
+    with open(RUTA, 'r', encoding= 'utf-8') as config:
+
+        return json.load(config)
