@@ -1,0 +1,26 @@
+import pygame.sprite
+from constantes import *
+
+class Trampas(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__()
+        self.image = pygame.image.load("assets/img/Trampa/spike.png")
+        self._rect = self.image.get_rect(midbottom=(x, y))
+        self.ground_collision_rect = pygame.Rect(self._rect.x, self._rect.y + 6, self._rect.w - 1, self._rect.h / 2)
+
+    @property
+    def rect(self):
+        return self._rect
+
+    @rect.setter
+    def rect(self, value):
+        self._rect = value
+        self.ground_collision_rect = pygame.Rect(self._rect.x, self._rect.y + 6, self._rect.w - 1, self._rect.h / 2)
+
+    def draw(self, screen):
+        if DEBUG:
+            pygame.draw.rect(screen, ((0, 255, 0)), self.ground_collision_rect)
+        screen.blit(self.image, self.rect)
+
+    def reset_pos(self, x, y):
+        self.rect.midbottom = (x, y)
