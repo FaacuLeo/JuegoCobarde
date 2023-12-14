@@ -1,0 +1,21 @@
+import pygame as pg
+import os
+
+class Item(pg.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__()
+
+        # Cargar la imagen de la croqueta
+        img_path = os.path.join("assets", "img", "item", "Alimento.png")
+        self.image = pg.image.load(img_path).convert_alpha()
+
+        # Escalar la imagen a 30x30 píxeles (ajusta según sea necesario)
+        self.image = pg.transform.scale(self.image, (30, 30))
+
+        self.rect = self.image.get_rect()
+        self.rect.topleft = (x, y)
+        self.recogido = False  # Agrega esta línea para inicializar la variable
+
+    def kill(self):
+        super().kill()
+        self.recogido = True
