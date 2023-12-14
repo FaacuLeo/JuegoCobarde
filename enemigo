@@ -1,14 +1,18 @@
 import pygame as pg
 from constantes import DEBUG
 from constantes import *
-import random
-
+import random 
+from auxiliar import SurfaceManager as sf
 class Enemigo(pg.sprite.Sprite):
     def __init__(self, estructuras):
         super().__init__()
-        self.image = pg.image.load("./assets/img/enemigo/cuboneizquierda/izquierda.png").convert()
+        #self.image = pg.image.load(".assets\img\enemigo\cuboneizquierda\izquierda.png").convert()
+        self.iddle_r = sf.get_surface_from_spritesheet('./assets\img\enemigo\cubonederecha\derecha.png', 3, 1)
+        self.iddle_l = sf.get_surface_from_spritesheet('./assets\img\enemigo\cuboneizquierda\izquierda.png', 3, 1)
+        self.image = self.iddle_l[0]
+        
         self.rect = self.image.get_rect()
-        self.velocidad = 5
+        self.velocidad = 2
         self.estructuras = estructuras
         self.activo = True  # Bandera para indicar si el enemigo está activo
         self.coordenadas_iniciales = self.generar_coordenadas_aleatorias()
@@ -30,13 +34,13 @@ class Enemigo(pg.sprite.Sprite):
 
     def update(self):
         # Si el enemigo está activo, realiza las actualizaciones normales
-        if self.activo:
-            self.rect.x += self.velocidad
+        
+        self.rect.x += self.velocidad
 
-            for estructura in self.estructuras:
-                if pg.sprite.collide_rect(self, estructura):
-                    self.rect.bottom = estructura.rect.top
+        for estructura in self.estructuras:
+            if pg.sprite.collide_rect(self, estructura):
+                self.rect.bottom = estructura.rect.top
 
-            if self.rect.right > max(estructura.rect.right for estructura in self.estructuras) or \
-               self.rect.left < min(estructura.rect.left for estructura in self.estructuras):
-                self.velocidad = -self.velocidad
+        if  self.rect.right > max(estructura.rect.right for estructura in self.estructuras) or \
+            self.rect.left < min(estructura.rect.left for estructura in self.estructuras):
+            self.velocidad = -self.velocidad
