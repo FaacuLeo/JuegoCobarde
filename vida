@@ -1,0 +1,35 @@
+import pygame as pg
+from main_player import Jugador
+
+class Vida(pg.sprite.Sprite):
+    def __init__(self, x, y, jugador, escala=0.5):
+        super().__init__()
+
+        # Cargamos la imagen original
+        original_image = pg.image.load(r'assets\img\Vida\sacarfondo.png')
+        # Escalamos la imagen
+        self.image = pg.transform.scale(original_image, (int(original_image.get_width() * escala), int(original_image.get_height() * escala)))
+
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+        self.jugador = jugador  # Referencia al jugador al que está asociada la vida
+
+        # Nueva fuente para el número de vidas
+        self.font = pg.font.Font(None, 36)
+
+        
+
+    def draw(self, pantalla):
+        pantalla.blit(self.image, self.rect)
+
+        # Obtener el texto de las vidas
+        vidas_texto = self.font.render(f'Vidas: {self.jugador.vidas}', True, (255, 255, 255))
+        # Obtener el rectángulo del texto para acceder a sus dimensiones
+        vidas_rect = vidas_texto.get_rect()
+        # Establecer la posición al lado del dibujo
+        vidas_rect.topleft = (self.rect.right + 10, self.rect.top)
+        pantalla.blit(vidas_texto, vidas_rect)
+
+    def perder_vida(self):
+        self.jugador.perder_vida()
