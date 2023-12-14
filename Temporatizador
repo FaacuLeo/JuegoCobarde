@@ -1,0 +1,18 @@
+
+import pygame as pg
+import sys
+from pygame.locals import QUIT
+
+class Temporizador:
+    def __init__(self):
+        self.tiempo_inicial = pg.time.get_ticks()
+
+    def obtener_tiempo_transcurrido(self):
+        tiempo_actual = pg.time.get_ticks()
+        tiempo_transcurrido = tiempo_actual - self.tiempo_inicial
+        return tiempo_transcurrido
+
+    def obtener_segundos_transcurridos(self):
+        tiempo_transcurrido = self.obtener_tiempo_transcurrido()
+        segundos_transcurridos = tiempo_transcurrido // 1000
+        return segundos_transcurridos
